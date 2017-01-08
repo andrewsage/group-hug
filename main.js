@@ -8,14 +8,12 @@
  * https://software.intel.com/en-us/xdk/docs/lp-xdk-iot
  */
 
-
 // keep /*jslint and /*jshint lines for proper jshinting and jslinting
 // see http://www.jslint.com/help.html and http://jshint.com/docs
 /* jslint node:true */
 /* jshint unused:true */
 
 "use strict" ;
-
 
 var mraa = require("mraa") ;
 
@@ -27,21 +25,20 @@ var noble = require('noble');
 
 console.log('MRAA Version: ' + mraa.getVersion());
 
-var connectedLed = new mraa.Gpio(1);
+var connectedLed = new mraa.Gpio(13);
 connectedLed.dir(mraa.DIR_OUT);
 connectedLed.write(0);
 
-var led1 = new mraa.Gpio(8);
-var led2 = new mraa.Gpio(9);
-var led3 = new mraa.Gpio(10);
-var led4 = new mraa.Gpio(11);
-var led5 = new mraa.Gpio(12);
-var led6 = new mraa.Gpio(13);
-var ledPower1 = new mraa.Gpio(0);
-ledPower1.dir(mraa.DIR_OUT);
-ledPower1.write(1);
+var led1 = new mraa.Gpio(2);
+var led2 = new mraa.Gpio(3);
+var led3 = new mraa.Gpio(4);
+var led4 = new mraa.Gpio(5);
+var led5 = new mraa.Gpio(6);
+var led6 = new mraa.Gpio(7);
+var led7 = new mraa.Gpio(8);
+var led8 = new mraa.Gpio(9);
 
-var leds = [led1, led1, led2, led3, led4, led5, led6];
+var leds = [led1, led1, led2, led3, led4, led5, led6, led7, led8];
 var numberLeds = leds.length;
 
 for (var i = 0; i < numberLeds; i++) {
@@ -107,7 +104,7 @@ function connect(peripheral) {
                     buttonCharacteristic.on('data', function(data, isNotification) {
                         var button = data.readUInt8(3) - 47;
                         var velocity = data.readUInt8(4);
-                        console.log('button ' + button + ' velocity ' + velocity +  ' isNotification ' + isNotification);
+                        console.log('button ' + button + ' velocity ' + velocity);
                         if (button > 0 && button < numberLeds) {
                             var led = leds[button];
                             if (velocity > 0) {
