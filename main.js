@@ -25,9 +25,7 @@ var noble = require('noble');
 
 console.log('MRAA Version: ' + mraa.getVersion());
 
-var connectedLed = new mraa.Gpio(13);
-connectedLed.dir(mraa.DIR_OUT);
-connectedLed.write(0);
+var hugs = 0;
 
 var led1 = new mraa.Gpio(2);
 var led2 = new mraa.Gpio(3);
@@ -38,21 +36,26 @@ var led6 = new mraa.Gpio(7);
 var led7 = new mraa.Gpio(8);
 var led8 = new mraa.Gpio(9);
 
-var leds = [led1, led1, led2, led3, led4, led5, led6, led7, led8];
+const EV_DRIVER_OFF = 1;
+const EV_DRIVER_ON = 0;
+
+var activeHugs = [];
+
+var leds = [led1, led2, led3, led4, led5, led6, led7, led8];
 var numberLeds = leds.length;
 
-for (var i = 0; i < numberLeds; i++) {
-    var led = leds[i];
-    led.dir(mraa.DIR_OUT);
-}
+turnOffAllLights();
+testCycleLights();
 
 var standardServiceUUID = "03b80e5aede84b33a7516ce34ec4c700";
 var standardButtonCharacteristicUUID = "7772e5db38684112a1a9f2669d106bf3";
 
+var connectedDevices = [];
+
 noble.on('stateChange', function(state) {
         console.log('state changed: ' + state);
         if (state == 'poweredOn') {
-                noble.startScanning();
+                startScan();
         } else {
                 noble.stopScanning();
         }
@@ -66,21 +69,49 @@ noble.on('scanStart', function() {
         console.log('Scanning started');
 });
 
-function connect(peripheral) {
-    peripheral.connect(function(error) {
-        console.log('connected to peripheral: ' + peripheral.uuid);
-        connectedLed.write(1);
+noble.on('discover', function(peripheral) {
+    if (peripheral.advertisement.localName == 'novppia1') {
 
         peripheral.once('disconnect', function() {
             console.log('disconnected from ' + peripheral.uuid);
-            connectedLed.write(0);
-            noble.startScanning();
+            var index = connectedDevices.indexOf(peripheral.uuid);
+            if(index > -1) {
+                connectedDevices.splice(index, 1);
+                startScan();
+            }
         });
 
+        if(connectedDevices.indexOf(peripheral.uuid) == -1) {
+            connectedDevices.push(peripheral.uuid);
+            console.log('Found device with uuid: ' + peripheral.uuid);
+            console.log('Found device with local name: ' + peripheral.advertisement.localName);
+            console.log('advertising the following service uuid\'s: ' + peripheral.advertisement.serviceUuids);
+            console.log();
+
+            connect(peripheral);
+        }
+    }
+});
+
+function startScan() {
+    // only scan for devices advertising these service UUID's (default or empty array => any peripherals
+    var serviceUuids = [standardServiceUUID];
+
+    // allow duplicate peripheral to be returned (default false) on discovery event
+    var allowDuplicates = true;
+
+    noble.startScanning(serviceUuids, allowDuplicates);
+}
+
+function connect(peripheral) {
+    peripheral.connect(function(error) {
+        var peripheralID = peripheral.uuid;
+        console.log('connected to peripheral: ' + peripheral.uuid);
+
         peripheral.discoverServices([standardServiceUUID], function(error, services) {
-            //console.log('discovered the following services:' + services);
-            for (var idxService in services) {
-                //console.log(' ' + idxService + ' service uuid: ' + services[idxService].uuid);
+            console.log('discovered the following services:' + services);
+            for(var idxService = 0; idxService < services.length; idxService++){
+                console.log(' ' + idxService + ' service uuid: ' + services[idxService].uuid);
 
                 var service = services[idxService];
                 service.discoverCharacteristics([standardButtonCharacteristicUUID], function(error, characteristics) {
@@ -93,26 +124,39 @@ function connect(peripheral) {
                     }
                     */
 
-
                     var buttonCharacteristic = characteristics[0];
-                    /*
                     buttonCharacteristic.subscribe(function(error) {
-                        console.log('Error: ' + error);
+                        if(error != null) {
+                            console.log('Error: ' + error);
+                        }
                     });
-                    */
 
                     buttonCharacteristic.on('data', function(data, isNotification) {
-                        var button = data.readUInt8(3) - 47;
+                        console.log('data ' + data.toString('hex') + ' ' + buttonCharacteristic._peripheralId);
+                        var button = data.readUInt8(3);
                         var velocity = data.readUInt8(4);
-                        console.log('button ' + button + ' velocity ' + velocity);
-                        if (button > 0 && button < numberLeds) {
-                            var led = leds[button];
-                            if (velocity > 0) {
-                                led.write(1);
-                            } else {
-                                led.write(0);
+                        var buttonIdentifier = buttonCharacteristic._peripheralId + ':' + button;
+                        console.log('button ' + buttonIdentifier + ' velocity ' + velocity);
+                        if (velocity > 0) {
+                            if(activeHugs.indexOf(buttonIdentifier) == -1) {
+                                activeHugs.push(buttonIdentifier)
+                            }
+                        } else {
+                            var index = activeHugs.indexOf(buttonIdentifier)
+                            if(index > -1) {
+                                activeHugs.splice(index, 1)
                             }
                         }
+
+                        hugs = activeHugs.length;
+
+                        var hugsReport = 'Hugs: ' + hugs;
+                        for (var i in activeHugs) {
+                            hugsReport += ' ' + activeHugs[i];
+                        }
+                        console.log(hugsReport);
+
+                        enableLights(hugs);
                     });
 
                     buttonCharacteristic.notify(true, function(error) {
@@ -124,13 +168,37 @@ function connect(peripheral) {
     });
 }
 
-noble.on('discover', function(peripheral) {
-    if (peripheral.advertisement.localName == 'novppia1') {
-        noble.stopScanning();
-        console.log('Found device with local name: ' + peripheral.advertisement.localName);
-        console.log('advertising the following service uuid\'s: ' + peripheral.advertisement.serviceUuids);
-        console.log();
-
-        connect(peripheral);
+function enableLights(hugs) {
+    for (var i = 0; i < numberLeds; i++) {
+        var led = leds[i];
+        if (hugs >= i + 1) {
+            led.write(EV_DRIVER_ON);
+        } else {
+            led.write(EV_DRIVER_OFF);
+        }
     }
-});
+}
+
+function testCycleLights() {
+
+    var testHugs = 0;
+    var periodicActivity = function() {
+        enableLights(testHugs);
+
+        testHugs++;
+
+        if(testHugs > numberLeds) {
+            clearInterval(intervalID);
+            turnOffAllLights();
+        }
+    };
+    var intervalID = setInterval(periodicActivity, 1000) ;  // start the periodic toggle
+}
+
+function turnOffAllLights() {
+    for (var i = 0; i < numberLeds; i++) {
+    var led = leds[i];
+    led.dir(mraa.DIR_OUT);
+    led.write(EV_DRIVER_OFF);
+}
+}

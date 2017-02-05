@@ -23,8 +23,8 @@
         "name": "GroupHug.xdk"
       },
       "GroupHug.xdke": {
-        "previousModTime": 1483904840000,
-        "modified": 1483904840000,
+        "previousModTime": 1486321481000,
+        "modified": 1486321481000,
         "seen": true,
         "name": "GroupHug.xdke"
       },
@@ -47,8 +47,8 @@
         "name": "icon.png"
       },
       "main.js": {
-        "previousModTime": 1483902588000,
-        "modified": 1483902588000,
+        "previousModTime": 1486321553000,
+        "modified": 1486321553000,
         "seen": true,
         "name": "main.js"
       },
@@ -65,6 +65,10 @@
         "name": "xdk/project-info.json"
       }
     },
-    "boardFileStatus": {}
+    "boardFileStatus": {
+      "main.js": {
+        "previousModTime": 1486321554074
+      }
+    }
   }
 }
