@@ -25,6 +25,50 @@ var noble = require('noble');
 
 console.log('MRAA Version: ' + mraa.getVersion());
 
+// BLE Peripheral setup
+var bleno = require('bleno');
+var BlenoPrimaryService = bleno.PrimaryService;
+var FirstCharacteristic = require('./characteristic');
+
+bleno.on('stateChange', function(state) {
+  console.log('on -> stateChange: ' + state);
+
+  if (state === 'poweredOn') {
+    bleno.startAdvertising('feedback', ['fc00']);
+  }
+  else {
+    if(state === 'unsupported'){
+      console.log("NOTE: BLE and Bleno configurations not enabled on board, see README.md for more details...");
+    }
+    bleno.stopAdvertising();
+  }
+});
+
+bleno.on('advertisingStart', function(error) {
+  console.log('on -> advertisingStart: ' + (error ? 'error ' + error : 'success'));
+
+  if (!error) {
+    bleno.setServices([
+      new BlenoPrimaryService({
+        uuid: 'fc00',
+        characteristics: [
+          new FirstCharacteristic()
+        ]
+      })
+    ]);
+  }
+});
+
+bleno.on('accept', function(clientAddress) {
+    console.log("Accepted Connection with Client Address: " + clientAddress);
+});
+
+bleno.on('disconnect', function(clientAddress) {
+    console.log("Disconnected Connection with Client Address: " + clientAddress);
+});
+
+
+// Groups Hugs relays etc.
 var hugs = 0;
 
 var led1 = new mraa.Gpio(2);
@@ -47,6 +91,7 @@ var numberLeds = leds.length;
 turnOffAllLights();
 testCycleLights();
 
+// BLE Central setup
 var standardServiceUUID = "03b80e5aede84b33a7516ce34ec4c700";
 var standardButtonCharacteristicUUID = "7772e5db38684112a1a9f2669d106bf3";
 
