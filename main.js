@@ -105,7 +105,6 @@ function startScan() {
 
 function connect(peripheral) {
     peripheral.connect(function(error) {
-        var peripheralID = peripheral.uuid;
         console.log('connected to peripheral: ' + peripheral.uuid);
 
         peripheral.discoverServices([standardServiceUUID], function(error, services) {
@@ -126,7 +125,7 @@ function connect(peripheral) {
 
                     var buttonCharacteristic = characteristics[0];
                     buttonCharacteristic.subscribe(function(error) {
-                        if(error != null) {
+                        if(error !== null) {
                             console.log('Error: ' + error);
                         }
                     });
@@ -139,12 +138,12 @@ function connect(peripheral) {
                         console.log('button ' + buttonIdentifier + ' velocity ' + velocity);
                         if (velocity > 0) {
                             if(activeHugs.indexOf(buttonIdentifier) == -1) {
-                                activeHugs.push(buttonIdentifier)
+                                activeHugs.push(buttonIdentifier);
                             }
                         } else {
-                            var index = activeHugs.indexOf(buttonIdentifier)
+                            var index = activeHugs.indexOf(buttonIdentifier);
                             if(index > -1) {
-                                activeHugs.splice(index, 1)
+                                activeHugs.splice(index, 1);
                             }
                         }
 
