@@ -188,6 +188,7 @@ function testCycleLights() {
         testHugs++;
 
         if(testHugs > numberLeds) {
+            testHugs = 0;
             clearInterval(intervalID);
             turnOffAllLights();
         }
@@ -197,8 +198,8 @@ function testCycleLights() {
 
 function turnOffAllLights() {
     for (var i = 0; i < numberLeds; i++) {
-    var led = leds[i];
-    led.dir(mraa.DIR_OUT);
-    led.write(EV_DRIVER_OFF);
-}
+        var led = leds[i];
+        led.dir(mraa.DIR_OUT);
+        led.write(EV_DRIVER_OFF);
+    }
 }
