@@ -46,6 +46,7 @@ var numberLeds = leds.length;
 
 turnOffAllLights();
 testCycleLights();
+//turnOnAllLights();
 
 var standardServiceUUID = "03b80e5aede84b33a7516ce34ec4c700";
 var standardButtonCharacteristicUUID = "7772e5db38684112a1a9f2669d106bf3";
@@ -186,7 +187,7 @@ function testCycleLights() {
 
         testHugs++;
 
-        if(testHugs > numberLeds) {
+        if(testHugs > numberLeds + 1) {
             testHugs = 0;
             clearInterval(intervalID);
             turnOffAllLights();
@@ -200,5 +201,13 @@ function turnOffAllLights() {
         var led = leds[i];
         led.dir(mraa.DIR_OUT);
         led.write(EV_DRIVER_OFF);
+    }
+}
+
+function turnOnAllLights() {
+    for (var i = 0; i < numberLeds; i++) {
+        var led = leds[i];
+        led.dir(mraa.DIR_OUT);
+        led.write(EV_DRIVER_ON);
     }
 }
