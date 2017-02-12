@@ -23,8 +23,8 @@
         "name": "GroupHug.xdk"
       },
       "GroupHug.xdke": {
-        "previousModTime": 1486572571000,
-        "modified": 1486572571000,
+        "previousModTime": 1486833205000,
+        "modified": 1486833205000,
         "seen": true,
         "name": "GroupHug.xdke"
       },
@@ -47,14 +47,14 @@
         "name": "icon.png"
       },
       "main.js": {
-        "previousModTime": 1486651988000,
-        "modified": 1486651988000,
+        "previousModTime": 1486833268000,
+        "modified": 1486833268000,
         "seen": true,
         "name": "main.js"
       },
       "package.json": {
-        "previousModTime": 1483206541000,
-        "modified": 1483206541000,
+        "previousModTime": 1486655506000,
+        "modified": 1486655506000,
         "seen": true,
         "name": "package.json"
       },
@@ -63,11 +63,17 @@
         "modified": 1483206541000,
         "seen": true,
         "name": "xdk/project-info.json"
+      },
+      "device_message.js": {
+        "previousModTime": 1486816553000,
+        "modified": 1486816553000,
+        "seen": true,
+        "name": "device_message.js"
       }
     },
     "boardFileStatus": {
       "main.js": {
-        "previousModTime": 1486651990081
+        "previousModTime": 1486833270548
       }
     }
   }

@@ -16,6 +16,10 @@
 "use strict" ;
 
 var mraa = require("mraa") ;
+var fs = require('fs');
+var DeviceMessage = require("./device_message.js");
+
+console.log("Hugs 1.1.3");
 
 // add any UPM requires that you need
 // and the rest of your app goes here
@@ -40,6 +44,7 @@ const EV_DRIVER_OFF = 1;
 const EV_DRIVER_ON = 0;
 
 var activeHugs = [];
+var messageQueue = [];
 
 var leds = [led1, led2, led3, led4, led5, led6, led7, led8];
 var numberLeds = leds.length;
@@ -47,6 +52,8 @@ var numberLeds = leds.length;
 turnOffAllLights();
 testCycleLights();
 //turnOnAllLights();
+
+startProcessQueue();
 
 var standardServiceUUID = "03b80e5aede84b33a7516ce34ec4c700";
 var standardButtonCharacteristicUUID = "7772e5db38684112a1a9f2669d106bf3";
@@ -127,36 +134,30 @@ function connect(peripheral) {
                     var buttonCharacteristic = characteristics[0];
                     buttonCharacteristic.subscribe(function(error) {
                         if(error !== null) {
-                            console.log('Error: ' + error);
+                            //console.log('Error: ' + error);
                         }
                     });
 
                     buttonCharacteristic.on('data', function(data, isNotification) {
-                        console.log('data ' + data.toString('hex') + ' ' + buttonCharacteristic._peripheralId);
+                        //console.log('data ' + data.toString('hex') + ' ' + buttonCharacteristic._peripheralId);
                         var button = data.readUInt8(3);
                         var velocity = data.readUInt8(4);
                         var buttonIdentifier = buttonCharacteristic._peripheralId + ':' + button;
-                        console.log('button ' + buttonIdentifier + ' velocity ' + velocity);
-                        if (velocity > 0) {
-                            if(activeHugs.indexOf(buttonIdentifier) == -1) {
-                                activeHugs.push(buttonIdentifier);
-                            }
-                        } else {
-                            var index = activeHugs.indexOf(buttonIdentifier);
-                            if(index > -1) {
-                                activeHugs.splice(index, 1);
-                            }
-                        }
+                        //console.log('button ' + buttonIdentifier + ' velocity ' + velocity);
+                        
+                        var date = new Date();
+                        var current_hour = date.getHours();
+                        var current_day = date.getDate();
 
-                        hugs = activeHugs.length;
-
-                        var hugsReport = 'Hugs: ' + hugs;
-                        for (var i in activeHugs) {
-                            hugsReport += ' ' + activeHugs[i];
-                        }
-                        console.log(hugsReport);
-
-                        enableLights(hugs);
+                        var filename = '/home/root/hugs' + current_day + '-' + current_hour + '.csv';
+                        //console.log(filename);
+                        fs.appendFile(filename, buttonCharacteristic._peripheralId + ',' + button + ',' + new Date().toISOString() + ',' + velocity + '\n', function (err) {
+                            if (err) throw err;
+                                //console.log('The "data to append" was appended to file!');
+                            });
+                        
+                        var message = new DeviceMessage(buttonCharacteristic._peripheralId, button, velocity);
+                        messageQueue.push(message);
                     });
 
                     buttonCharacteristic.notify(true, function(error) {
@@ -210,4 +211,46 @@ function turnOnAllLights() {
         led.dir(mraa.DIR_OUT);
         led.write(EV_DRIVER_ON);
     }
+}
+
+function startProcessQueue() {
+    var processQueue = function() {
+        
+        if(messageQueue.length > 0) {
+            //console.log('Queue size: ' + messageQueue.length);
+
+            var message = messageQueue.shift();
+            //console.log(message.getDevice() + ' - ' + message.getButton() + ' - ' + message.getVelocity());
+            var buttonIdentifier = message.getButtonIdentifier();
+            var velocity = message.getVelocity();
+            
+            if (velocity > 0) {
+                if(activeHugs.indexOf(buttonIdentifier) == -1) {
+                    activeHugs.push(buttonIdentifier);
+                }
+            } else {
+                var index = activeHugs.indexOf(buttonIdentifier);
+                if(index > -1) {
+                    activeHugs.splice(index, 1);
+                }
+            }
+
+            hugs = activeHugs.length;
+
+            /*
+            var hugsReport = 'Hugs: ' + hugs;
+            for (var i in activeHugs) {
+                hugsReport += ' ' + activeHugs[i];
+            }
+            console.log(hugsReport);
+            */
+            if(hugs > numberLeds) {
+                activeHugs = [];
+                hugs = 0;
+            }
+            enableLights(hugs);
+        }   
+    };
+    
+    var intervalID = setInterval(processQueue, 1);
 }
