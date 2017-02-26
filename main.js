@@ -18,6 +18,8 @@
 var mraa = require("mraa") ;
 var fs = require('fs');
 var DeviceMessage = require("./device_message.js");
+var MongoClient = require('mongodb').MongoClient
+    , format = require('util').format;
 
 console.log("Hugs 1.1.3");
 
@@ -218,6 +220,11 @@ function connect(peripheral) {
                                 //console.log('The "data to append" was appended to file!');
                             });
                         
+                        fs.close(filename,function (err) {
+                            if (err) throw err;
+                                //console.log('The "data to append" was appended to file!');
+                            });
+                        
                         var message = new DeviceMessage(buttonCharacteristic._peripheralId, button, velocity);
                         messageQueue.push(message);
                     });
@@ -232,6 +239,24 @@ function connect(peripheral) {
 }
 
 function enableLights(hugs) {
+    
+    /*
+    MongoClient.connect('mongodb://127.0.0.1:27017/hugdata', 
+        function(err, db) {   if (err) throw err;   
+            console.log("Connected to Database");
+            document = {
+                "hugs" : hugs,  
+                "datetime" : new Date().toISOString()
+            };  
+            //insert record	
+            db.collection('httphugs').insert(document, 
+            function(err, records) {		
+            if (err) throw err;		
+                console.log("Record added as ");	       
+            });         
+        });           
+
+*/
     for (var i = 0; i < numberLeds; i++) {
         var led = leds[i];
         if (hugs >= i + 1) {

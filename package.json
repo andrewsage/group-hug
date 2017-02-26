@@ -10,6 +10,8 @@
   "private": true,
   "dependencies": {
     "express": "^4.13.3",
-    "mraa": "^0.7.3"
+    "mraa": "^0.7.3",
+    "mongodb": "~2.0.33",
+    "monk": "~1.0.1"
   }
 }
